@@ -1,6 +1,7 @@
 const net = require("net");
 const crypto = require("crypto");
 const fs = require("fs");
+const readline = require("readline");
 
 const monthDictionary = {
   0: "Enero",
@@ -130,7 +131,92 @@ function updateTendenciaMensual() {
     });
 }
 
-function checkTendenciaMensual(ratio, month, year) {}
+function checkTendenciaMensual(ratio, month, year) {
+  const fileStream = fs.createReadStream("tendenciaMensual.txt");
+  let secondLastLine = "";
+  let firstLastLine = "";
+
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
+
+  let lines = [];
+
+  rl.on("line", (line) => {
+    lines.push(line);
+  });
+
+  rl.on("close", () => {
+    secondLastLine = lines[lines.length - 2];
+    if (secondLastLine === undefined) {
+      secondLastLine = "";
+    }
+    firstLastLine = lines[lines.length - 1];
+
+    secondLastLine = secondLastLine.split(",");
+    firstLastLine = firstLastLine.split(",");
+
+    let secondLastLineRatio = 0;
+    let firstLastLineRatio = 0;
+
+    if (secondLastLine.length > 0 && secondLastLine[0] != "mes") {
+      secondLastLineRatio = parseFloat(secondLastLine[2]);
+    }
+
+    if (firstLastLine.length > 0 && firstLastLine[0] != "mes") {
+      firstLastLineRatio = parseFloat(firstLastLine[2]);
+    }
+
+    let lastLineMonth = firstLastLine[0];
+    let currentMonth = new Date().getMonth();
+    currentMonth = monthDictionary[currentMonth];
+
+    let tendencia = calculateTendenciaMensual(
+      secondLastLineRatio,
+      firstLastLineRatio,
+      ratio
+    );
+
+    if (lastLineMonth === currentMonth) {
+      // Edit the last line
+      firstLastLine[2] = ratio;
+      firstLastLine[3] = tendencia;
+      lines[lines.length - 1] = firstLastLine.join(",");
+    } else {
+      // Append a new line
+      const data = `${
+        monthDictionary[month - 1]
+      },${year},${ratio},${tendencia}\n`;
+      lines.push(data);
+    }
+
+    // Write all lines back to the file
+    fs.writeFile("tendenciaMensual.txt", lines.join("\n"), (err) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log("Data written to file");
+      }
+    });
+  });
+}
+
+function calculateTendenciaMensual(
+  secondLastLineRatio,
+  firstLastLineRatio,
+  ratio
+) {
+  let tendencia = "";
+  if ((secondLastLineRatio == firstLastLineRatio) == ratio) {
+    tendencia = "0";
+  } else if (secondLastLineRatio > ratio || firstLastLineRatio > ratio) {
+    tendencia = "-";
+  } else {
+    tendencia = "+";
+  }
+  return tendencia;
+}
 
 function verifyData(data, signature, publicKeyString) {
   try {
