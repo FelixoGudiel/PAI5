@@ -137,6 +137,7 @@ function checkTendenciaMensual(ratio, month, year) {
   const fileStream = fs.createReadStream("tendenciaMensual.txt");
   let secondLastLine = "";
   let firstLastLine = "";
+  let actualLine = "";
 
   const rl = readline.createInterface({
     input: fileStream,
@@ -151,14 +152,22 @@ function checkTendenciaMensual(ratio, month, year) {
 
   rl.on("close", () => {
     // Obtenemos las dos últimas líneas del archivo, que corresponden a los dos últimos méses
-    secondLastLine = lines[lines.length - 2];
+    secondLastLine = lines[lines.length - 3];
     if (secondLastLine === undefined) {
       secondLastLine = "";
     }
-    firstLastLine = lines[lines.length - 1];
+    firstLastLine = lines[lines.length - 2];
+    if (firstLastLine === undefined) {
+      firstLastLine = "";
+    }
+    actualLine = lines[lines.length - 1];
+    if (actualLine === undefined) {
+      actualLine = "";
+    }
 
     secondLastLine = secondLastLine.split(",");
     firstLastLine = firstLastLine.split(",");
+    actualLine = actualLine.split(",");
 
     let secondLastLineRatio = 0;
     let firstLastLineRatio = 0;
@@ -171,7 +180,7 @@ function checkTendenciaMensual(ratio, month, year) {
       firstLastLineRatio = parseFloat(firstLastLine[2]);
     }
 
-    let lastLineMonth = firstLastLine[0];
+    let lastLineMonth = actualLine[0];
     let currentMonth = new Date().getMonth();
     currentMonth = monthDictionary[currentMonth];
 
@@ -184,9 +193,9 @@ function checkTendenciaMensual(ratio, month, year) {
     // Si el mes actual es igual al mes de la última línea, editamos la última línea. En caso contrario, añadimos una nueva línea con el nuevo mes.
     if (lastLineMonth === currentMonth) {
       // Editamos la última línea
-      firstLastLine[2] = ratio;
-      firstLastLine[3] = tendencia;
-      lines[lines.length - 1] = firstLastLine.join(",");
+      actualLine[2] = ratio;
+      actualLine[3] = tendencia;
+      lines[lines.length - 1] = actualLine.join(",");
     } else {
       // Añadimos una nueva línea
       const data = `${
