@@ -95,6 +95,7 @@ function handleReceivedData(buffer) {
   verifyData(data, signature, publicKeyString);
 }
 
+// Se actualiza el archivo tendenciaMensual.txt.
 function updateTendenciaMensual() {
   const date = new Date();
   const month = date.getMonth() + 1;
@@ -103,6 +104,7 @@ function updateTendenciaMensual() {
   const monthString = month < 10 ? "0" + month : "" + month;
   const yearMonth = `${year}-${monthString}%`;
 
+  // Obtener todas las entradas de la db cuyo año y mes sean iguales al actual.
   const dataTimestamp = new Promise((resolve, reject) => {
     db.all(
       `SELECT * FROM Requests WHERE timestamp LIKE ?`,
@@ -119,11 +121,10 @@ function updateTendenciaMensual() {
 
   dataTimestamp
     .then((rows) => {
+      // Obtenemos el ratio de las firmas válidas
       let numberValid = rows.filter((row) => row.signatureValid == 1).length;
       let ratio = numberValid / rows.length;
       ratio = ratio.toFixed(2);
-      console.log("Número de firmas válidas: ", numberValid);
-      console.log("Ratio: ", ratio);
       checkTendenciaMensual(ratio, month, year);
     })
     .catch((err) => {
@@ -131,6 +132,7 @@ function updateTendenciaMensual() {
     });
 }
 
+// Con esta función se compruba la tendencia actual con respecto a los dos meses anteriores.
 function checkTendenciaMensual(ratio, month, year) {
   const fileStream = fs.createReadStream("tendenciaMensual.txt");
   let secondLastLine = "";
@@ -148,6 +150,7 @@ function checkTendenciaMensual(ratio, month, year) {
   });
 
   rl.on("close", () => {
+    // Obtenemos las dos últimas líneas del archivo, que corresponden a los dos últimos méses
     secondLastLine = lines[lines.length - 2];
     if (secondLastLine === undefined) {
       secondLastLine = "";
@@ -178,30 +181,30 @@ function checkTendenciaMensual(ratio, month, year) {
       ratio
     );
 
+    // Si el mes actual es igual al mes de la última línea, editamos la última línea. En caso contrario, añadimos una nueva línea con el nuevo mes.
     if (lastLineMonth === currentMonth) {
-      // Edit the last line
+      // Editamos la última línea
       firstLastLine[2] = ratio;
       firstLastLine[3] = tendencia;
       lines[lines.length - 1] = firstLastLine.join(",");
     } else {
-      // Append a new line
+      // Añadimos una nueva línea
       const data = `${
         monthDictionary[month - 1]
       },${year},${ratio},${tendencia}\n`;
       lines.push(data);
     }
 
-    // Write all lines back to the file
+    // Reescribimo de nuevo todas las líneas en el archivo.
     fs.writeFile("tendenciaMensual.txt", lines.join("\n"), (err) => {
       if (err) {
         console.error(err);
-      } else {
-        console.log("Data written to file");
       }
     });
   });
 }
 
+// Se calcula la tendnecia actual con respecto a los ratios de los dos meses anteriores.
 function calculateTendenciaMensual(
   secondLastLineRatio,
   firstLastLineRatio,
@@ -224,6 +227,7 @@ function verifyData(data, signature, publicKeyString) {
       key: publicKeyString,
       format: "pem",
     });
+
     // A partir de la clave pública, comprobamos que la firma le pertenece
     const verifier = crypto.createVerify("SHA256");
     verifier.update(data);
@@ -257,6 +261,7 @@ function verifyData(data, signature, publicKeyString) {
     console.error("Error al verificar la firma: ", err.message);
   }
 }
+
 //Función de lectura del contenido que se recibe por la petición
 function processReceivedData(data) {
   console.log("Procesando datos recibidos...");
