@@ -1,7 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 
 // Conectarse a la base de datos SQLite
-// Asegúrate de que el nombre del archivo de la base de datos sea el correcto
 const db = new sqlite3.Database('./mydatabase.db', sqlite3.OPEN_READONLY, (err) => {
     if (err) {
         console.error('Error al conectar a la base de datos: ' + err.message);
