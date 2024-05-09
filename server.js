@@ -1,5 +1,34 @@
 const net = require("net");
 const crypto = require("crypto");
+const fs = require("fs");
+
+const monthDictionary = {
+  0: "Enero",
+  1: "Febrero",
+  2: "Marzo",
+  3: "Abril",
+  4: "Mayo",
+  5: "Junio",
+  6: "Julio",
+  7: "Agosto",
+  8: "Septiembre",
+  9: "Octubre",
+  10: "Noviembre",
+  11: "Diciembre",
+};
+
+fs.open("tendenciaMensual.txt", "a", (err, file) => {
+  if (err) throw err;
+});
+
+fs.readFile("tendenciaMensual.txt", "utf8", (err, data) => {
+  if (err) throw err;
+  if (data === "") {
+    fs.writeFile("tendenciaMensual.txt", "mes,año,ratio,tendencia\n", (err) => {
+      if (err) throw err;
+    });
+  }
+});
 
 const sqlite3 = require("sqlite3").verbose();
 // Cambiar ':memory:' por 'mydatabase.db' para almacenar la base de datos en un archivo
@@ -65,6 +94,44 @@ function handleReceivedData(buffer) {
   verifyData(data, signature, publicKeyString);
 }
 
+function updateTendenciaMensual() {
+  const date = new Date();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+
+  const monthString = month < 10 ? "0" + month : "" + month;
+  const yearMonth = `${year}-${monthString}%`;
+
+  const dataTimestamp = new Promise((resolve, reject) => {
+    db.all(
+      `SELECT * FROM Requests WHERE timestamp LIKE ?`,
+      [yearMonth + "%"],
+      (err, rows) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rows);
+        }
+      }
+    );
+  });
+
+  dataTimestamp
+    .then((rows) => {
+      let numberValid = rows.filter((row) => row.signatureValid == 1).length;
+      let ratio = numberValid / rows.length;
+      ratio = ratio.toFixed(2);
+      console.log("Número de firmas válidas: ", numberValid);
+      console.log("Ratio: ", ratio);
+      checkTendenciaMensual(ratio, month, year);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
+}
+
+function checkTendenciaMensual(ratio, month, year) {}
+
 function verifyData(data, signature, publicKeyString) {
   try {
     const publicKey = crypto.createPublicKey({
@@ -88,8 +155,9 @@ function verifyData(data, signature, publicKeyString) {
           return console.error(err.message);
         }
         console.log(
-          `Una nueva fila ha sido inserada en la db con id ${this.lastID}`
+          `Una nueva fila ha sido inserada en la db con id ${this.lastID}\n------`
         );
+        updateTendenciaMensual();
       }
     );
 
