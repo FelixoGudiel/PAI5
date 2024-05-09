@@ -2,14 +2,14 @@ const net = require("net");
 const crypto = require("crypto");
 
 const sqlite3 = require("sqlite3").verbose();
-// Cambiar ':memory:' por 'mydatabase.db' para almacenar la base de datos en un archivo
+//Conexión a la base de datos estática para mantener en el tiempo los datos recibidos
 const db = new sqlite3.Database("mydatabase.db", (err) => {
   if (err) {
     return console.error(err.message);
   }
   console.log("Conectado a la base de datos SQLite en mydatabase.db.");
 });
-
+//La base de datos tiene los atributos id, tiempo, la información de la petición, si la petición fue válida y la clave pública usada
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS Requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +32,7 @@ const server = net.createServer((socket) => {
     handleReceivedData(buffer);
   });
 });
-
+//El servidor está activo en localhost:7070
 server.listen(7070, () => {
   console.log("Servidor escuchando en puerto 7070");
 });
@@ -40,7 +40,7 @@ server.listen(7070, () => {
 server.on("error", (err) => {
   console.error(`Error del servidor: ${err}`);
 });
-
+//Cuando llegue una petición:
 function handleReceivedData(buffer) {
   // Leer las longitudes de los datos, la firma y la clave pública
   const dataLength = buffer.readInt32BE(0);
@@ -61,7 +61,7 @@ function handleReceivedData(buffer) {
       4 + dataLength + 4 + signatureLength + 4 + publicKeyLength
     )
     .toString();
-
+  //Pasamos a verificar el contenido de la petición
   verifyData(data, signature, publicKeyString);
 }
 
@@ -71,7 +71,7 @@ function verifyData(data, signature, publicKeyString) {
       key: publicKeyString,
       format: "pem",
     });
-
+    // A partir de la clave pública, comprobamos que la firma le pertenece
     const verifier = crypto.createVerify("SHA256");
     verifier.update(data);
     const isValid = verifier.verify(publicKey, signature);
@@ -103,7 +103,7 @@ function verifyData(data, signature, publicKeyString) {
     console.error("Error al verificar la firma: ", err.message);
   }
 }
-
+//Función de lectura del contenido que se recibe por la petición
 function processReceivedData(data) {
   console.log("Procesando datos recibidos...");
   const items = data.split(", ").reduce((acc, item) => {
