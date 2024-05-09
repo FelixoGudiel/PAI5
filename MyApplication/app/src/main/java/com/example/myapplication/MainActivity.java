@@ -67,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
         long lastTime = preferences.getLong(KEY_LAST_TIME, 0);
         int requestCount = preferences.getInt(KEY_REQUEST_COUNT, 0);
         long currentTime = new Date().getTime();
-        if (currentTime - lastTime > //4 * 3600 * 1000 // 4 horas
-                30 ) { //testing
+        if (currentTime - lastTime > 4 * 3600 * 1000 // 4 horas
+                 ) { 
             SharedPreferences.Editor editor = preferences.edit();
             editor.putLong(KEY_LAST_TIME, currentTime);
             editor.putInt(KEY_REQUEST_COUNT, 1);
