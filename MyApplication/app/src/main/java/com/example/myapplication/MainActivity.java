@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_LAST_TIME = "lastTime";
     private static final String KEY_REQUEST_COUNT = "requestCount";
 
-    // Setup Server information
+    //Se debe actualizar esta información para que apunte a la dirección IP del servidor. A través de ipconfig se puede obtener.
     protected static String server = "192.168.56.1";
     protected static int port = 7070;
 
@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
 
         preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
 
-        // Allow network on main thread for simplicity (not recommended for production)
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
@@ -54,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // Comprobación de que no se hayan hecho más de 3 requests en 4 horas.
                 if (canSendRequest()) {
                     showDialog();
                 } else {
@@ -62,11 +62,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
+    // Registra el timestamp de la petición y cuántas peticiones se han hecho. Si hay 3 peticiones en las últimas 4 horas, devuelve False.
     private boolean canSendRequest() {
         long lastTime = preferences.getLong(KEY_LAST_TIME, 0);
-        int requestCount = preferences.getInt(KEY_REQUEST_COUNT, 0);
-
+        int requestCount = preferences.getInt(KEY_REQUEST_COUNT, 0)
         long currentTime = new Date().getTime();
         if (currentTime - lastTime > //4 * 3600 * 1000 // 4 horas
                 30 ) { //testing
@@ -97,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
             int mesas = Integer.parseInt(editTextMesas.getText().toString());
             int sillas = Integer.parseInt(editTextSillas.getText().toString());
             int sillones = Integer.parseInt(editTextSillones.getText().toString());
-
+            //Comprobación de que los parámetros están dentro de los límites impuestos 
             if (camas < 0 || camas > 300 || mesas < 0 || mesas > 300 || sillas < 0 || sillas > 300 || sillones < 0 || sillones > 300) {
                 Toast.makeText(getApplicationContext(), "Los valores deben estar entre 0 y 300", Toast.LENGTH_SHORT).show();
             } else {
@@ -107,11 +106,7 @@ public class MainActivity extends AppCompatActivity {
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                // 1. Extraer los datos de la vista
-
-                                // 2. Firmar los datos
-
-                                // 3. Enviar los datos
+                                //Mandar esta información
                                 String dataToSend = "Camas: " + camas + ", Mesas: " + mesas + ", Sillas: " + sillas + ", Sillones: " + sillones;
                                 sendData(dataToSend);
                             }
@@ -158,12 +153,13 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+    //Proceso de generación de claves mediante RSA
     private KeyPair generateKeyPair() throws Exception {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048, new SecureRandom());
         return keyGen.generateKeyPair();
     }
-
+    //Proceso de firma usando la clave privada
     private byte[] signData(String data, PrivateKey privateKey) throws Exception {
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(privateKey);
