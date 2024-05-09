@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     // Registra el timestamp de la petición y cuántas peticiones se han hecho. Si hay 3 peticiones en las últimas 4 horas, devuelve False.
     private boolean canSendRequest() {
         long lastTime = preferences.getLong(KEY_LAST_TIME, 0);
-        int requestCount = preferences.getInt(KEY_REQUEST_COUNT, 0)
+        int requestCount = preferences.getInt(KEY_REQUEST_COUNT, 0);
         long currentTime = new Date().getTime();
         if (currentTime - lastTime > //4 * 3600 * 1000 // 4 horas
                 30 ) { //testing
